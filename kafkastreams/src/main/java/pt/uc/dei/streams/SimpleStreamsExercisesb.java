@@ -14,12 +14,9 @@ import org.apache.kafka.streams.kstream.TimeWindows;
 
 public class SimpleStreamsExercisesb {
     public static void main(String[] args) throws InterruptedException, IOException {         
-        if (args.length != 2) {
-            System.err.println("Wrong arguments. Please run the class as follows:"); System.err.println(SimpleStreamsExercisesb.class.getName() + " input-topic output-topic");
-            System.exit(1);
-        }
-        String topicName = args[0].toString();
-        String outtopicname = args[1].toString();
+
+        final String topicName = "standard-weather";
+        final String outtopicname = "result-topic";
 
         java.util.Properties props = new Properties();
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "exercises-application-b");

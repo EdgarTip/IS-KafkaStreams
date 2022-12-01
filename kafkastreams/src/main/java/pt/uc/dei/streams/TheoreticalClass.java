@@ -17,12 +17,9 @@ import org.apache.kafka.streams.kstream.TimeWindows;
 
 public class TheoreticalClass {
     public static void main(String[] args) throws InterruptedException, IOException {         
-        if (args.length != 2) {
-            System.err.println("Wrong arguments. Please run the class as follows:"); System.err.println(TheoreticalClass.class.getName() + " input-topic output-topic");
-            System.exit(1);
-        }
-        String topicName = args[0].toString();
-        String outtopicname = args[1].toString();
+        
+        final String topicName = "h";
+        final String outtopicname = "result-topic";
 
         java.util.Properties props = new Properties();
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "theoretical-class2");
@@ -30,12 +27,16 @@ public class TheoreticalClass {
         props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.Long().getClass());
         
-        StreamsBuilder builder = new StreamsBuilder(); KStream<String, Long> lines = builder.stream(topicName);
+        StreamsBuilder builder = new StreamsBuilder(); 
+        KStream<String, Long> lines = builder.stream(topicName);
 
  
         /* count() */
         KTable<String, Long> outlines = lines.groupByKey().count();
-        outlines.mapValues(v -> "" + v).toStream().to(outtopicname, Produced.with(Serdes.String(), Serdes.String()));
+        outlines.mapValues(v -> "" + v).toStream()
+                                        .filter((key, value) -> value != null)
+                                        .peek((key, value) -> System.out.println("-1-Outgoind record - key " + key + " value " + value))
+                                        .to(outtopicname, Produced.with(Serdes.String(), Serdes.String()));
 
         /* reduce() */
         lines
@@ -43,6 +44,8 @@ public class TheoreticalClass {
             .reduce((a, b) -> a + b)
             .mapValues(v -> "" + v)
             .toStream()
+            .filter((key, value) -> value != null)
+            .peek((key, value) -> System.out.println("-2-Outgoind record - key " + key + " value " + value))
             .to(outtopicname + "-2", Produced.with(Serdes.String(), Serdes.String()));
         
 
@@ -57,6 +60,8 @@ public class TheoreticalClass {
             }, Materialized.with(Serdes.String(), new IntArraySerde()))
             .mapValues(v -> v[0] != 0 ? "" + (1.0 * v[1]) / v[0] : "div by 0")
             .toStream()
+            .filter((key, value) -> value != null)
+            .peek((key, value) -> System.out.println("-3-Outgoind record - key " + key + " value " + value))
             .to(outtopicname + "-3", Produced.with(Serdes.String(), Serdes.String()));
 
         /* groupBy() */
@@ -65,6 +70,8 @@ public class TheoreticalClass {
             .count()
             .mapValues(v -> "" + v)
             .toStream()
+            .filter((key, value) -> value != null)
+            .peek((key, value) -> System.out.println("-4-Outgoind record - key " + key + " value " + value))
             .to(outtopicname + "-4", Produced.with(Serdes.String(), Serdes.String()));
 
         /* swap keys and values */
@@ -74,6 +81,8 @@ public class TheoreticalClass {
             .count()
             .mapValues(v -> "" + v)
             .toStream()
+            .filter((key, value) -> value != null)
+            .peek((key, value) -> System.out.println("-5- Outgoind record - key " + key + " value " + value))
             .to(outtopicname + "-5", Produced.with(Serdes.Long(), Serdes.String()));
 
         /* hopping window */
@@ -85,7 +94,9 @@ public class TheoreticalClass {
             .windowedBy(hoppingWindow)
             .count()
             .toStream((wk, v) -> wk.key())
+            .filter((key, value) -> value != null)
             .mapValues((k, v) -> k + " -> " + v)
+            .peek((key, value) -> System.out.println("-6- Outgoind record - key " + key + " value " + value))
             .to(outtopicname + "-6", Produced.with(Serdes.String(), Serdes.String()));
         
 

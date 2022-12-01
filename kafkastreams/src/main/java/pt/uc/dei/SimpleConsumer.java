@@ -12,7 +12,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 public class SimpleConsumer {
     public static void main(String[] args) throws Exception{
         //Assign topicName to string variable
-        String topicName = args[0].toString();
+        final String topicName = "result-topic";
         // create instance for properties to access producer configs
         Properties props = new Properties();
         //Assign localhost id
@@ -27,14 +27,14 @@ public class SimpleConsumer {
         props.put("buffer.memory", 33554432);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "KafkaExampleConsumer");
         props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        Consumer<String, String> consumer = new KafkaConsumer<>(props); consumer.subscribe(Collections.singletonList(topicName));
+        props.put("value.deserializer", "org.apache.kafka.common.serialization.LongDeserializer");
+        Consumer<String, Long> consumer = new KafkaConsumer<>(props); consumer.subscribe(Collections.singletonList(topicName));
         
         try {
             while (true) {
                 Duration d = Duration.ofSeconds(1);
-                ConsumerRecords<String, String> records = consumer.poll(d);
-                for (ConsumerRecord<String, String> record : records) {
+                ConsumerRecords<String, Long> records = consumer.poll(d);
+                for (ConsumerRecord<String, Long> record : records) {
                     System.out.println(record.key() + " => " + record.value()); 
                 }
             }    
