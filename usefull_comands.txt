@@ -1,3 +1,4 @@
 ./kafka-topics --bootstrap-server (broker (ex:  broker1:9092)) --delete --topic (topic_name)
 ./kafka-topics --bootstrap-server=localhost:9092 --delete --topic '.*'
 ./kafka-topics --bootstrap-server=localhost:9092 --list
+./kafka-console-consumer --bootstrap-server localhost:9092 --topic exercises-application-a-KSTREAM-AGGREGATE-STATE-STORE-0000000002-changelog --from-beginning

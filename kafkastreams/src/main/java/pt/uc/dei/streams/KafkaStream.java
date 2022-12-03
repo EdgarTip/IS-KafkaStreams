@@ -21,20 +21,21 @@ import org.apache.kafka.streams.state.KeyValueStore;
 public class KafkaStream {
     public static void main(String[] args) throws InterruptedException, IOException {
         
-        final String inputTopic = "are";
+        final String inputTopic = "thirtytwo";
         final String inputTopic2 = "alertabcdesafsafsadfsaf";
         final String outputTopic = "result-topic";
         
         Properties streamProps = new Properties();
 
-        streamProps.put(StreamsConfig.APPLICATION_ID_CONFIG, "exercises-application-a");
+        streamProps.put(StreamsConfig.APPLICATION_ID_CONFIG, "a");
         streamProps.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "broker1:9092");
         streamProps.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         streamProps.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
 
         StreamsBuilder builder = new StreamsBuilder();
-        KStream<String, String> mainStreamStandard = builder.stream(inputTopic);
-        KStream<String, String> mainStreamAlert = builder.stream(inputTopic2);
+        
+        KStream<String, String> mainStreamStandard = builder.stream(inputTopic, Consumed.with(Serdes.String(), Serdes.String()));
+        //KStream<String, String> mainStreamAlert = builder.stream(inputTopic2);
 
         /* Ver exemplos no Theoretical !!*/
 
@@ -47,7 +48,7 @@ public class KafkaStream {
                           .to(outputTopic, Produced.with(Serdes.String(), Serdes.Long()));
                           
         // Count	temperature	readings	of	standard	weather	events	per	location 
-        mainStreamStandard.map((k, v) -> new KeyValue<>(v.split("-")[0], v.split("-")[1]))
+        mainStreamStandard.map((k, v) -> new KeyValue<>(v.split(":")[0], v.split(":")[1]))
                         .groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
                         .count()
                         .toStream()
@@ -58,6 +59,24 @@ public class KafkaStream {
 
         // Get	minimum	and	maximum	temperature	per	weather	station. (EDGAR)
 
+        mainStreamStandard.groupByKey()
+                          .aggregate( () -> new int[]{-200, -200}, (aggKey, newVal, aggValue) -> {
+                            if(aggValue[0] == -200){
+                                aggValue[0] = Integer.valueOf(newVal.split(":")[1]);
+                                aggValue[1] = Integer.valueOf(newVal.split(":")[1]);
+                            }
+                            else{
+                                aggValue[0] = Math.min(aggValue[0], Integer.valueOf(newVal.split(":")[1]));
+                                aggValue[1] = Math.max(aggValue[1], Integer.valueOf(newVal.split(":")[1]));
+                            }
+                                
+                            return aggValue;
+                          }, Materialized.with(Serdes.String(), new IntArraySerde()))
+                        .mapValues(v -> "Min " + v[0] + "/Max " + v[1])
+                        .toStream()
+                        .filter((key, value) -> value != null)
+                        .peek((key, value) -> System.out.println("-3-Outgoind record - key " + key + " value " + value))
+                        .to(outputTopic + "-3", Produced.with(Serdes.String(), Serdes.String()));
 
 
         // Get	minimum	and	maximum	temperature	per	location	(Students	should	computethese	values	in	Fahrenheit). (ALEXY)

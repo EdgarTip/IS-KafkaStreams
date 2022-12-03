@@ -11,8 +11,8 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 public class WeatherStationPublisher {
     public static void main(String[] args) throws Exception{ //Assign topicName to string variable
 
-        String topicName = "are";
-        String topicName2 = "alertabcdesafsafsadfsaf";
+        String topicName = "thirtytwo";
+        //String topicName2 = "alertabcdesafsafsadfsaf";
 
         String[] weatherStations = {"WS1", "WS2", "WS3", "WS4", "WS5", "WS6"};
         String[] locations={"Coimbra", "Miranda", "Lousa", "Guarda", "Viseu"};
@@ -20,7 +20,7 @@ public class WeatherStationPublisher {
       	Random r=new Random();        
       	
         int upperbound = 35;
-        int lowerbound = 0;
+        int lowerbound = -20;
 
         // create instance for properties to access producer configs
         Properties props = new Properties(); //Assign localhost id
@@ -44,13 +44,13 @@ public class WeatherStationPublisher {
             int id_weatherStation = r.nextInt(weatherStations.length);
             int id_location = r.nextInt(locations.length);
             Long temperature = (long)r.nextInt(upperbound-lowerbound) + lowerbound;
-            producer.send(new ProducerRecord<String, String>(topicName, weatherStations[id_weatherStation], locations[id_location] + "-" + String.valueOf(temperature)));
+            producer.send(new ProducerRecord<String, String>(topicName, weatherStations[id_weatherStation], locations[id_location] + ":" + String.valueOf(temperature)));
             
-            System.out.println("Sending message " + locations[id_location] + ":" + String.valueOf(temperature) + " to topic " + topicName);
+            System.out.println("Sending message " + weatherStations[id_weatherStation] + " - " + locations[id_location] + ":" + String.valueOf(temperature) + " to topic " + topicName);
         }
 
         producer.close();
-
+        /*
         Producer<String, String> producer2 = new KafkaProducer<>(props);
         //Send to topic alert-weather some alerts
         for(int i = 0; i < 10; i++) {
@@ -62,7 +62,7 @@ public class WeatherStationPublisher {
             System.out.println("Sending message " + locations[id_location] + ":" + red_type[red_type_id] + " to topic " + topicName2);
         }
         producer2.close();
-        
+        */
 
         
     }
