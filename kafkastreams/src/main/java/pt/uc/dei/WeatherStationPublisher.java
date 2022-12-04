@@ -11,8 +11,8 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 public class WeatherStationPublisher {
     public static void main(String[] args) throws Exception{ //Assign topicName to string variable
 
-        String topicName = "thirtytwo";
-        //String topicName2 = "alertabcdesafsafsadfsaf";
+        String topicName = "saaa";
+        String topicName2 = "sbbb";
 
         String[] weatherStations = {"WS1", "WS2", "WS3", "WS4", "WS5", "WS6"};
         String[] locations={"Coimbra", "Miranda", "Lousa", "Guarda", "Viseu"};
@@ -20,7 +20,7 @@ public class WeatherStationPublisher {
       	Random r=new Random();        
       	
         int upperbound = 35;
-        int lowerbound = -20;
+        int lowerbound = -45;
 
         // create instance for properties to access producer configs
         Properties props = new Properties(); //Assign localhost id
@@ -50,19 +50,19 @@ public class WeatherStationPublisher {
         }
 
         producer.close();
-        /*
+        
         Producer<String, String> producer2 = new KafkaProducer<>(props);
         //Send to topic alert-weather some alerts
-        for(int i = 0; i < 10; i++) {
+        for(int i = 0; i < 3; i++) {
             int id_weatherStation = r.nextInt(weatherStations.length);
             int id_location = r.nextInt(locations.length);
             int red_type_id = r.nextInt(red_type.length);
             producer2.send(new ProducerRecord<String, String>(topicName2,  weatherStations[id_weatherStation], locations[id_location] + ":" + red_type[red_type_id]));
             
-            System.out.println("Sending message " + locations[id_location] + ":" + red_type[red_type_id] + " to topic " + topicName2);
+            System.out.println("Sending message " + weatherStations[id_weatherStation] + " - " + locations[id_location] + ":" + red_type[red_type_id] + " to topic " + topicName2);
         }
         producer2.close();
-        */
+        
 
         
     }

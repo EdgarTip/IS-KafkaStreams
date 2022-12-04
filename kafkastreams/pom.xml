@@ -18,6 +18,13 @@
     <maven.compiler.target>17</maven.compiler.target>
   </properties>
 
+<repositories>
+    <repository>
+        <id>confluent</id>
+        <url>https://packages.confluent.io/maven/</url>
+    </repository>
+</repositories>
+
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -49,6 +56,11 @@
       <artifactId>slf4j-jdk14</artifactId>
       <version>2.0.3</version>
     </dependency>
+    <dependency>
+      <groupId>io.confluent</groupId>
+      <artifactId>kafka-streams-avro-serde</artifactId>
+      <version>7.3.0</version>
+  </dependency>
   </dependencies>
 
   <build>
