@@ -21,13 +21,13 @@ import org.apache.kafka.streams.state.KeyValueStore;
 public class KafkaStream {
     public static void main(String[] args) throws InterruptedException, IOException {
         
-        final String inputTopic = "are";
-        final String inputTopic2 = "alertabcdesafsafsadfsaf";
-        final String outputTopic = "result-topic";
+        final String inputTopic = "standard2";
+        final String inputTopic2 = "alert2";
+        final String outputTopic = "result-topic1";
         
         Properties streamProps = new Properties();
 
-        streamProps.put(StreamsConfig.APPLICATION_ID_CONFIG, "exercises-application-a");
+        streamProps.put(StreamsConfig.APPLICATION_ID_CONFIG, "id1");
         streamProps.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "broker1:9092");
         streamProps.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         streamProps.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
@@ -47,7 +47,7 @@ public class KafkaStream {
                           .to(outputTopic, Produced.with(Serdes.String(), Serdes.Long()));
                           
         // Count	temperature	readings	of	standard	weather	events	per	location 
-        mainStreamStandard.map((k, v) -> new KeyValue<>(v.split("-")[0], v.split("-")[1]))
+        mainStreamStandard.map((k, v) -> new KeyValue<>(v.split(":")[0], v.split(":")[1]))
                         .groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
                         .count()
                         .toStream()
@@ -62,15 +62,50 @@ public class KafkaStream {
 
         // Get	minimum	and	maximum	temperature	per	location	(Students	should	computethese	values	in	Fahrenheit). (ALEXY)
 
-
-
+        mainStreamStandard.map((k, v) -> new KeyValue<>(v.split(":")[0], v.split(":")[1]))
+                        .groupByKey()
+                        .aggregate( () -> new int[]{-200, -200}, (aggKey, newVal, aggValue) -> {
+                        if(aggValue[0] == -200){
+                            aggValue[0] = Integer.valueOf(newVal);
+                            aggValue[1] = Integer.valueOf(newVal);
+                        }
+                        else{
+                            aggValue[0] = Math.min(aggValue[0], Integer.valueOf(newVal));
+                            aggValue[1] = Math.max(aggValue[1], Integer.valueOf(newVal));
+                        }
+                            
+                        return aggValue;
+                        }, Materialized.with(Serdes.String(), new IntArraySerde()))
+                    .mapValues(v -> "Min " + (v[0] * 1.9 + 32) + " F / Max " + (v[1] * 1.9 + 32) + " F")
+                    .toStream()
+                    .filter((key, value) -> value != null)
+                    .peek((key, value) -> System.out.println("-4-Outgoing record - key " + key + " value " + value))
+                    .to(outputTopic + "-4", Produced.with(Serdes.String(), Serdes.String()));
+ 
         // Count	the	total	number	of	alerts	per	weather	station (EDGAR)
 
 
 
         //  Count	the	total	alerts	per	type. (ALEXY)
 
+        mainStreamAlert.map((k, v) -> new KeyValue<>(k, v.split(":")[1]))
+                        .groupByKey()
+                        .aggregate( () -> new int[]{0, 0}, (aggKey, newVal, aggValue) -> {
+                            if(newVal.equals("clear")){
+                                aggValue[0] += 1;
+                            }
+                            else{
+                                System.out.println("-->" + newVal + "<--");
+                                aggValue[1] += 1;
+                            }
+                            return aggValue;
+                        }, Materialized.with(Serdes.String(), new IntArraySerde()))             
 
+                    .mapValues(v -> "Clear: " + v[0] + " / Extreme " + v[1])
+                    .toStream()
+                    .filter((key, value) -> value != null)
+                    .peek((key, value) -> System.out.println("-6-Outgoing record - key " + key + " value " + value))
+                    .to(outputTopic + "-6", Produced.with(Serdes.String(), Serdes.String()));
 
         // Get	minimum	temperature of	weather	stations	with	red	alert	events. (EDGAR)
 
@@ -90,7 +125,7 @@ public class KafkaStream {
 
         // Get	the	average	temperature	of	weather	stations	with	red	alert	events	for the	last	hour	(students	are	allowed	to	define	a	different	value	for	the	time	window). (ALEXY)
 
-
+                        
 
 
 
@@ -131,4 +166,5 @@ public class KafkaStream {
 
         
     }   
+
 }

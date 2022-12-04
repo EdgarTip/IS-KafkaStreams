@@ -11,8 +11,8 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 public class WeatherStationPublisher {
     public static void main(String[] args) throws Exception{ //Assign topicName to string variable
 
-        String topicName = "are";
-        String topicName2 = "alertabcdesafsafsadfsaf";
+        String topicName = "standard2";
+        String topicName2 = "alert2";
 
         String[] weatherStations = {"WS1", "WS2", "WS3", "WS4", "WS5", "WS6"};
         String[] locations={"Coimbra", "Miranda", "Lousa", "Guarda", "Viseu"};
@@ -44,7 +44,7 @@ public class WeatherStationPublisher {
             int id_weatherStation = r.nextInt(weatherStations.length);
             int id_location = r.nextInt(locations.length);
             Long temperature = (long)r.nextInt(upperbound-lowerbound) + lowerbound;
-            producer.send(new ProducerRecord<String, String>(topicName, weatherStations[id_weatherStation], locations[id_location] + "-" + String.valueOf(temperature)));
+            producer.send(new ProducerRecord<String, String>(topicName, weatherStations[id_weatherStation], locations[id_location] + ":" + String.valueOf(temperature)));
             
             System.out.println("Sending message " + locations[id_location] + ":" + String.valueOf(temperature) + " to topic " + topicName);
         }
