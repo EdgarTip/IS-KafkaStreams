@@ -2,9 +2,13 @@ package pt.uc.dei.streams;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Properties;
 
 import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.common.serialization.Serdes.FloatSerde;
+import org.apache.kafka.common.serialization.Serdes.IntegerSerde;
+import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
@@ -12,10 +16,13 @@ import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.Grouped;
+import org.apache.kafka.streams.kstream.JoinWindows;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Produced;
+import org.apache.kafka.streams.kstream.TimeWindows;
+import org.apache.kafka.streams.kstream.Windowed;
 import org.apache.kafka.streams.state.KeyValueStore;
 
 public class KafkaStream {
@@ -125,9 +132,38 @@ public class KafkaStream {
 
         // Get	the	average	temperature	of	weather	stations	with	red	alert	events	for the	last	hour	(students	are	allowed	to	define	a	different	value	for	the	time	window). (ALEXY)
 
-                        
+        // Time window of 1 hour
+        Duration windowSize = Duration.ofMinutes(1);
+        Duration advanceSize = Duration.ofMinutes(1);
+        TimeWindows hoppingWindow = TimeWindows.ofSizeWithNoGrace(windowSize).advanceBy(advanceSize);
 
+        // Aggregate to get [sum, count] in the last time window
+        KTable<String, int[]> averageTemp = mainStreamStandard.groupByKey()
+        .aggregate( () -> new int[]{0 ,0}, (aggKey, newVal, aggValue) -> {
+        aggValue[0] += Integer.valueOf(newVal.split(":")[1]);
+        aggValue[1] += 1;  
+        return aggValue;
+        }, Materialized.with(Serdes.String(), new IntArraySerde()));
+        
+        // Join weather stations with their [sum,count] and their respective red alert events
+        KStream<String, String> joined = mainStreamAlert.join(averageTemp,
+        (leftValue, rightValue) -> "left/" + leftValue + "/right/" + (float)rightValue[0]/rightValue[1]); // left value = key, right value = [sum, count] -> [0]/[1] = average);
 
+        // Key = Red alert event, Value = Average temperature
+        KStream<String, String> avgStream = joined.map((k, v) -> new KeyValue<>(k, v.split("/")[3])); // value = average
+         
+        avgStream
+        .groupByKey()
+        .windowedBy(hoppingWindow)
+        .aggregate( () -> "", (aggKey, newVal, aggValue) -> {
+            return newVal;
+        }, Materialized.with(Serdes.String(), new StringSerde()))   
+        .toStream()
+        .mapValues(v -> "Average: " + v)
+        .map((wk, value) -> KeyValue.pair(wk.key(),value))
+        .filter((key, value) -> value != null)
+        .peek((key, value) -> System.out.println("-11-Outgoing record - key " + key + " value " + value))
+        .to(outputTopic + "-11", Produced.with(Serdes.String(), Serdes.String()));
 
         KafkaStreams kafkaStreams = new KafkaStreams(builder.build(), streamProps);
         kafkaStreams.start();

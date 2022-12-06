@@ -46,8 +46,7 @@ public class WeatherStationPublisher {
             Long temperature = (long)r.nextInt(upperbound-lowerbound) + lowerbound;
             producer.send(new ProducerRecord<String, String>(topicName, weatherStations[id_weatherStation], locations[id_location] + ":" + String.valueOf(temperature)));
             
-            System.out.println("Sending message " + locations[id_location] + ":" + String.valueOf(temperature) + " to topic " + topicName);
-        }
+            System.out.println("Sending message " + weatherStations[id_weatherStation] + " - " + locations[id_location] + ":" + String.valueOf(temperature) + " to topic " + topicName);        }
 
         producer.close();
 
@@ -59,7 +58,7 @@ public class WeatherStationPublisher {
             int red_type_id = r.nextInt(red_type.length);
             producer2.send(new ProducerRecord<String, String>(topicName2,  weatherStations[id_weatherStation], locations[id_location] + ":" + red_type[red_type_id]));
             
-            System.out.println("Sending message " + locations[id_location] + ":" + red_type[red_type_id] + " to topic " + topicName2);
+            System.out.println("Sending message " + weatherStations[id_weatherStation] + " - " + locations[id_location] + ":" + red_type[red_type_id] + " to topic " + topicName2);
         }
         producer2.close();
         
