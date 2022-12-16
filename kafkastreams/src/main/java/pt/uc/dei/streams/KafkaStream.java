@@ -4,31 +4,25 @@ import java.io.IOException;
 import java.time.Duration;
 
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.serialization.Serdes.FloatSerde;
 import org.apache.kafka.common.serialization.Serdes.IntegerSerde;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
-import org.apache.kafka.common.utils.Bytes;
 
 
 import java.util.Properties;
 
-import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.serialization.Serdes.IntegerSerde;
+
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.Grouped;
-import org.apache.kafka.streams.kstream.JoinWindows;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.kstream.TimeWindows;
 
-import org.apache.kafka.streams.kstream.Windowed;
-import org.apache.kafka.streams.state.KeyValueStore;
 
 
 public class KafkaStream {
@@ -62,7 +56,7 @@ public class KafkaStream {
         
         KStream<String, String> mainStreamStandard = builder.stream(inputTopic, Consumed.with(Serdes.String(), Serdes.String()));
         KStream<String, String> mainStreamAlert = builder.stream(inputTopic2, Consumed.with(Serdes.String(), Serdes.String()));
-
+        
         /* Ver exemplos no Theoretical !!*/
 
         // Count temperature readings of standard weather events per weather station.
