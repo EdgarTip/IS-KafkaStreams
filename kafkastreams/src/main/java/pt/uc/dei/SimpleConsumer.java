@@ -12,7 +12,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 public class SimpleConsumer {
     public static void main(String[] args) throws Exception{
         //Assign topicName to string variable
-        final String topicName = "result-topic";
+        final String topicName = "result-topic1";
         // create instance for properties to access producer configs
         Properties props = new Properties();
         //Assign localhost id

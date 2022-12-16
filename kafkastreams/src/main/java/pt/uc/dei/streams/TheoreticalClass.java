@@ -18,7 +18,7 @@ import org.apache.kafka.streams.kstream.TimeWindows;
 public class TheoreticalClass {
     public static void main(String[] args) throws InterruptedException, IOException {         
         
-        final String topicName = "h";
+        final String topicName = "alert2";
         final String outtopicname = "result-topic";
 
         java.util.Properties props = new Properties();
