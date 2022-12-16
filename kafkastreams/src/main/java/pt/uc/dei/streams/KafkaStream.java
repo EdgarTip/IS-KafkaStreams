@@ -83,7 +83,7 @@ public class KafkaStream {
                         .to(outputTopic, Produced.with(Serdes.String(), Serdes.Long()));
 
 
-        // Get	minimum	and	maximum	temperature	per	weather	station. (EDGAR)
+        // Get	minimum	and	maximum	temperature	per	weather	station. 
 
         KTable<String, int[]> minMaxTemp = mainStreamStandard.groupByKey()
                           .aggregate( () -> new int[]{-200, -200}, (aggKey, newVal, aggValue) -> {
@@ -108,7 +108,7 @@ public class KafkaStream {
                 .to(outputTopic + "-3", Produced.with(Serdes.String(), Serdes.String()));
 
 
-        // Get	minimum	and	maximum	temperature	per	location	(Students	should	computethese	values	in	Fahrenheit). (ALEXY)
+        // Get	minimum	and	maximum	temperature	per	location	(Students	should	computethese	values	in	Fahrenheit). 
 
         mainStreamStandard.map((k, v) -> new KeyValue<>(v.split(":")[0], v.split(":")[1]))
 
@@ -134,17 +134,17 @@ public class KafkaStream {
                     .to(outputTopic + "-4", Produced.with(Serdes.String(), Serdes.String()));
 
 
-        // Count	the	total	number	of	alerts	per	weather	station (EDGAR)
+        // Count	the	total	number	of	alerts	per	weather	station 
 
         mainStreamAlert.groupByKey()
                           .count()
                           .toStream()
                           .filter((key, value) -> value != null)
-                          .peek((key, value) -> System.out.println("-6- Outgoind record - key " + key + " value " + value))
+                          .peek((key, value) -> System.out.println("-5- Outgoind record - key " + key + " value " + value))
                           .to(outputTopic, Produced.with(Serdes.String(), Serdes.Long()));
                           
 
-        //  Count	the	total	alerts	per	type. (ALEXY)
+        //  Count	the	total	alerts	per	type. 
 
         mainStreamAlert.map((k, v) -> new KeyValue<>(k, v.split(":")[1]))
                         .groupByKey()
@@ -165,7 +165,7 @@ public class KafkaStream {
                     .peek((key, value) -> System.out.println("-6-Outgoing record - key " + key + " value " + value))
                     .to(outputTopic + "-6", Produced.with(Serdes.String(), Serdes.String()));
 
-        // Get	minimum	temperature of	weather	stations	with	red	alert	events. (EDGAR)
+        // Get	minimum	temperature of	weather	stations	with	red	alert	events.
 
         KStream<String, String> joined = mainStreamAlert.join(minMaxTemp,
             (leftValue, rightValue) -> "left/" + leftValue + "/right/" + rightValue[0] /* ValueJoiner */
@@ -192,7 +192,7 @@ public class KafkaStream {
         
 
         
-        //Get	 maximum	 temperature	 of	 each	 location	 of	 alert	 events	 for the	 last	 hour	(students	are	allowed	to	define a	different	value	for	the	time	window). (EDGAR)
+        //Get	 maximum	 temperature	 of	 each	 location	 of	 alert	 events	 for the	 last	 hour	(students	are	allowed	to	define a	different	value	for	the	time	window). 
         
         KStream<String, String> joinedMax = mainStreamAlert.join(minMaxTemp,
             (leftValue, rightValue) -> "left/" + leftValue + "/right/" + rightValue[1] /* ValueJoiner */
@@ -213,25 +213,9 @@ public class KafkaStream {
         .peek((key, value) -> System.out.println("-8-Outgoing record - key " + key + " value " + value))
         .to(outputTopic + "-8", Produced.with(Serdes.String(), Serdes.Integer()));
 
-        // Get	minimum	temperature	per	weather	station	in	red	alert	zones. (ALEXY)
-
+        // Get	minimum	temperature	per	weather	station	in	red	alert	zones. 
 
         // Transform Standard stream to KTable with the lowest temperature
-
-        joined.groupByKey()
-                .aggregate( () -> -200,(aggKey, newVal, aggValue) -> {
-                    if(aggValue == -200){
-                        aggValue = Integer.valueOf(newVal.split("/")[3]);
-                    }
-
-                    return aggValue;
-                }, Materialized.with(Serdes.String(), new IntegerSerde()))
-                .toStream()
-                .filter((key, value) -> value != null)
-                .peek((key,value)-> System.out.println("9- key " + key + " value " + value))
-                .to(outputTopic, Produced.with(Serdes.String(), Serdes.Integer()));
-
-
 
         KTable<String, String> table1 = mainStreamStandard.map((k, v) -> new KeyValue<>(k, v.split(":")[1]))
                         .groupByKey()
@@ -250,14 +234,14 @@ public class KafkaStream {
         // Inner Join of KTable, Ktable
         // The most recent temperature read is associated with the most recent alert read
         KTable<String, String> joinedT = table1.join(table2,
-        (leftValue, rightValue) -> "(" + leftValue + "," + rightValue + ")");
+            (leftValue, rightValue) -> "(" + leftValue + "," + rightValue + ")");
 
         joinedT.toStream()
-        .filter((key, value) -> value != null)
-        .peek((key, value) -> System.out.println("-9- Outgoing record - key " + key + " value " + value))
-        .to(outputTopic, Produced.with(Serdes.String(), Serdes.String()));
+            .filter((key, value) -> value != null)
+            .peek((key, value) -> System.out.println("-9- Outgoing record - key " + key + " value " + value))
+            .to(outputTopic, Produced.with(Serdes.String(), Serdes.String()));
 
-        // Get	the	average	temperature	per	weather	station. (EDGAR)
+        // Get	the	average	temperature	per	weather	station.
         
         mainStreamStandard
             .groupByKey()
@@ -274,48 +258,40 @@ public class KafkaStream {
             .to(outputTopic + "-", Produced.with(Serdes.String(), Serdes.String()));
         
 
-        // Get	the	average	temperature	of	weather	stations	with	red	alert	events	for the	last	hour	(students	are	allowed	to	define	a	different	value	for	the	time	window). (ALEXY)
-
-        // Time window of 1 hour
-        Duration windowSize = Duration.ofMinutes(60);
-        Duration advanceSize = Duration.ofMinutes(60);
-        TimeWindows hoppingWindow = TimeWindows.ofSizeWithNoGrace(windowSize).advanceBy(advanceSize);
+        // Get	the	average	temperature	of	weather	stations	with	red	alert	events	for the	last	hour
 
         // Aggregate to get [sum, count] in the last time window
-        KTable<String, int[]> averageTemp = mainStreamStandard.groupByKey()
-        .aggregate( () -> new int[]{0 ,0}, (aggKey, newVal, aggValue) -> {
-        aggValue[0] += Integer.valueOf(newVal.split(":")[1]);
-        aggValue[1] += 1;  
-        return aggValue;
-        }, Materialized.with(Serdes.String(), new IntArraySerde()));
+        KTable<String, int[]> averageTemp = mainStreamStandard
+            .groupByKey()
+            .aggregate( () -> new int[]{0 ,0}, (aggKey, newVal, aggValue) -> {
+            aggValue[0] += Integer.valueOf(newVal.split(":")[1]);
+            aggValue[1] += 1;  
+            return aggValue;
+            }, Materialized.with(Serdes.String(), new IntArraySerde()));
         
+
         // Join weather stations with their [sum,count] and their respective red alert events
-        KStream<String, String> joined = mainStreamAlert.join(averageTemp,
+        KStream<String, String> joined2 = mainStreamAlert.join(averageTemp,
         (leftValue, rightValue) -> "left/" + leftValue + "/right/" + (float)rightValue[0]/rightValue[1]); // left value = key, right value = [sum, count] -> [0]/[1] = average);
 
         // Key = Red alert event, Value = Average temperature
-        KStream<String, String> avgStream = joined.map((k, v) -> new KeyValue<>(k, v.split("/")[3])); // value = average
+        KStream<String, String> avgStream = joined2.map((k, v) -> new KeyValue<>(k, v.split("/")[3])); // value = average
          
         avgStream
-        .groupByKey()
-        .windowedBy(hoppingWindow)
-        .aggregate( () -> "", (aggKey, newVal, aggValue) -> {
-            return newVal;
-        }, Materialized.with(Serdes.String(), new StringSerde()))   
-        .toStream()
-        .mapValues(v -> "Average: " + v)
-        .map((wk, value) -> KeyValue.pair(wk.key(),value))
-        .filter((key, value) -> value != null)
-        .peek((key, value) -> System.out.println("-11-Outgoing record - key " + key + " value " + value))
-        .to(outputTopic + "-11", Produced.with(Serdes.String(), Serdes.String()));
+            .groupByKey()
+            .windowedBy(hoppingWindow)
+            .aggregate( () -> "", (aggKey, newVal, aggValue) -> {
+                return newVal;
+            }, Materialized.with(Serdes.String(), new StringSerde()))   
+            .toStream()
+            .mapValues(v -> "Average: " + v)
+            .map((wk, value) -> KeyValue.pair(wk.key(),value))
+            .filter((key, value) -> value != null)
+            .peek((key, value) -> System.out.println("-11-Outgoing record - key " + key + " value " + value))
+            .to(outputTopic + "-11", Produced.with(Serdes.String(), Serdes.String()));
 
         KafkaStreams kafkaStreams = new KafkaStreams(builder.build(), streamProps);
         kafkaStreams.start();
-
-       
-
-
-        
     }   
 
 }
