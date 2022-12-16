@@ -28,13 +28,13 @@ import org.apache.kafka.streams.state.KeyValueStore;
 public class KafkaStream {
     public static void main(String[] args) throws InterruptedException, IOException {
         
-        final String inputTopic = "standard2";
-        final String inputTopic2 = "alert2";
+        final String inputTopic = "t1-c";
+        final String inputTopic2 = "t2-c";
         final String outputTopic = "result-topic1";
         
         Properties streamProps = new Properties();
 
-        streamProps.put(StreamsConfig.APPLICATION_ID_CONFIG, "id1");
+        streamProps.put(StreamsConfig.APPLICATION_ID_CONFIG, "id5");
         streamProps.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "broker1:9092");
         streamProps.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         streamProps.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
@@ -124,7 +124,31 @@ public class KafkaStream {
 
         // Get	minimum	temperature	per	weather	station	in	red	alert	zones. (ALEXY)
 
+        // Transform Standard stream to KTable with the lowest temperature
 
+        KTable<String, String> table1 = mainStreamStandard.map((k, v) -> new KeyValue<>(k, v.split(":")[1]))
+                        .groupByKey()
+                        .aggregate( () -> "", (aggKey, newVal, aggValue) -> {
+                            return newVal;
+                        }, Materialized.with(Serdes.String(), new StringSerde()));
+
+                    
+        // Transform Alert stream to KTable
+        KTable<String, String> table2 = mainStreamAlert.map((k, v) -> new KeyValue<>(k, v.split(":")[1]))
+                        .groupByKey()
+                        .aggregate( () -> "", (aggKey, newVal, aggValue) -> {
+                            return newVal;
+                        }, Materialized.with(Serdes.String(), new StringSerde()));
+
+        // Inner Join of KTable, Ktable
+        // The most recent temperature read is associated with the most recent alert read
+        KTable<String, String> joinedT = table1.join(table2,
+        (leftValue, rightValue) -> "(" + leftValue + "," + rightValue + ")");
+
+        joinedT.toStream()
+        .filter((key, value) -> value != null)
+        .peek((key, value) -> System.out.println("-9- Outgoing record - key " + key + " value " + value))
+        .to(outputTopic, Produced.with(Serdes.String(), Serdes.String()));
 
         // Get	the	average	temperature	per	weather	station. (EDGAR)
 
