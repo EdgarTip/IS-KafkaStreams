@@ -28,8 +28,8 @@ import org.apache.kafka.streams.state.KeyValueStore;
 public class KafkaStream {
     public static void main(String[] args) throws InterruptedException, IOException {
         
-        final String inputTopic = "t1-c";
-        final String inputTopic2 = "t2-c";
+        final String inputTopic = "t5-c";
+        final String inputTopic2 = "t10-c";
         final String outputTopic = "result-topic1";
         
         Properties streamProps = new Properties();
