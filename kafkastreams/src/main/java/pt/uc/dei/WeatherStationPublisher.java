@@ -97,8 +97,10 @@ public class WeatherStationPublisher {
 
     public static void main(String[] args) throws Exception{ //Assign topicName to string variable
 
+
         String topicName = "t1-d";
         String topicName2 = "t2-d";           
+
 
         // create instance for properties to access producer configs
         Properties props = new Properties(); //Assign localhost id
