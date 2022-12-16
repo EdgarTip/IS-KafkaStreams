@@ -1,31 +1,24 @@
 package pt.uc.dei.streams;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Map;
+
 import java.util.Properties;
 
-import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serdes.IntegerSerde;
-import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.Grouped;
-import org.apache.kafka.streams.kstream.JoinWindows;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Produced;
-import org.apache.kafka.streams.kstream.StreamJoined;
-import org.apache.kafka.streams.kstream.ValueJoiner;
-import org.apache.kafka.streams.state.KeyValueStore;
+import org.apache.kafka.streams.kstream.TimeWindows;
 
-import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
 public class KafkaStream {
 
@@ -37,14 +30,20 @@ public class KafkaStream {
 
     public static void main(String[] args) throws InterruptedException, IOException {
         
-        final String inputTopic = "saaa";
-        final String inputTopic2 = "sbbb";
+        final String inputTopic = "qwe";
+        final String inputTopic2 = "qwee";
         final String outputTopic = "result-topic";
+
+
+        Duration windowSize = Duration.ofMinutes(60);
+        Duration advanceSize = Duration.ofMinutes(60);
+        TimeWindows hoppingWindow = TimeWindows.ofSizeWithNoGrace(windowSize).advanceBy(advanceSize);
+        //long joinWindowSizeMs = 60L * 60L * 1000L;
         
         Properties streamProps = new Properties();
 
-        streamProps.put(StreamsConfig.APPLICATION_ID_CONFIG, "d");
-        streamProps.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "broker1:9092");
+        streamProps.put(StreamsConfig.APPLICATION_ID_CONFIG, "ert");
+        streamProps.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "broker1:9092,broker2:9093");
         streamProps.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         streamProps.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
 
@@ -156,7 +155,6 @@ public class KafkaStream {
                 return aggValue;
             }, Materialized.with(Serdes.String(), new IntegerSerde()))
             .toStream()
-            .peek((key,value) -> System.out.println("GWEFWEF"))
             .filter((key, value) -> value != null)
             .peek((key,value)-> System.out.println("7- Minimum temperature in alert stations " + String.valueOf(value)))
             .to(outputTopic, Produced.with(Serdes.String(), Serdes.Integer()));
@@ -164,8 +162,25 @@ public class KafkaStream {
 
         
         //Get	 maximum	 temperature	 of	 each	 location	 of	 alert	 events	 for the	 last	 hour	(students	are	allowed	to	define a	different	value	for	the	time	window). (EDGAR)
+        
+        KStream<String, String> joinedMax = mainStreamAlert.join(minMaxTemp,
+            (leftValue, rightValue) -> "left/" + leftValue + "/right/" + rightValue[1] /* ValueJoiner */
+        ).peek((key, value) -> System.out.println("-DEBUGGG- Outgoind record - key " + key + " value " + value));
 
+        joinedMax.groupByKey()
+        .windowedBy(hoppingWindow)
+        .aggregate( () -> -200,(aggKey, newVal, aggValue) -> {
+            if(aggValue == -200){
+                aggValue = Integer.valueOf(newVal.split("/")[3]);
+            }
 
+            return aggValue;
+        }, Materialized.with(Serdes.String(), new IntegerSerde()))
+        .toStream()
+        .map((wk, value) -> KeyValue.pair(wk.key(),value))
+        .filter((key, value) -> value != null)
+        .peek((key, value) -> System.out.println("-8-Outgoing record - key " + key + " value " + value))
+        .to(outputTopic + "-8", Produced.with(Serdes.String(), Serdes.Integer()));
 
         // Get	minimum	temperature	per	weather	station	in	red	alert	zones. (ALEXY)
 
@@ -185,7 +200,20 @@ public class KafkaStream {
 
 
         // Get	the	average	temperature	per	weather	station. (EDGAR)
+        
+        mainStreamStandard
+            .groupByKey()
+            .aggregate(() -> new int[]{0, 0}, (aggKey, newValue, aggValue) -> {
+                aggValue[0] += 1;
+                aggValue[1] += Integer.valueOf(newValue.split(":")[1]);
 
+                return aggValue;
+            }, Materialized.with(Serdes.String(), new IntArraySerde()))
+            .mapValues(v -> v[0] != 0 ? "" + (1.0 * v[1]) / v[0] : "div by 0")
+            .toStream()
+            .filter((key, value) -> value != null)
+            .peek((key, value) -> System.out.println("-10-Outgoind record - key " + key + " value " + value))
+            .to(outputTopic + "-", Produced.with(Serdes.String(), Serdes.String()));
         
 
         // Get	the	average	temperature	of	weather	stations	with	red	alert	events	for the	last	hour	(students	are	allowed	to	define	a	different	value	for	the	time	window). (ALEXY)

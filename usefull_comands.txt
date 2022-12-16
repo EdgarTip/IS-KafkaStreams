@@ -1,4 +1,7 @@
 ./kafka-topics --bootstrap-server (broker (ex:  broker1:9092)) --delete --topic (topic_name)
 ./kafka-topics --bootstrap-server=localhost:9092 --delete --topic '.*'
-./kafka-topics --bootstrap-server=localhost:9092 --list
-./kafka-console-consumer --bootstrap-server localhost:9092 --topic exercises-application-a-KSTREAM-AGGREGATE-STATE-STORE-0000000002-changelog --from-beginning
+./bin/kafka-topics --bootstrap-server=broker1:9092 --list
+./bin/kafka-console-consumer --bootstrap-server localhost:9092 --topic project3fromDB --from-beginning
+./connect-standalone.sh config/connect-standalone.properties config/connect-jdbc-source-edgar.properties
+./bin/connect-standalone config/connect-standalone.properties config/connect-jdbc-source-edgar.properties
+./bin/kafka-console-consumer --bootstrap-server broker1:9092 --topic project3fromDB --from-beginning
