@@ -36,8 +36,8 @@ public class KafkaStream {
     public static void main(String[] args) throws InterruptedException, IOException {
         
 
-        final String inputTopic = "t1-c";
-        final String inputTopic2 = "t2-c";
+        final String inputTopic = "t1-f";
+        final String inputTopic2 = "t2-f";
         final String outputTopic = "result-topic1";
 
         Duration windowSize = Duration.ofMinutes(60);
@@ -47,8 +47,8 @@ public class KafkaStream {
         
         Properties streamProps = new Properties();
 
-        streamProps.put(StreamsConfig.APPLICATION_ID_CONFIG, "id5");
-        streamProps.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "broker1:9092,broker2:9093");
+        streamProps.put(StreamsConfig.APPLICATION_ID_CONFIG, "id111");
+        streamProps.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "broker1:9092");
         streamProps.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
         streamProps.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
 
@@ -147,50 +147,42 @@ public class KafkaStream {
                                 aggValue[0] += 1;
                             }
                             else{
-                                System.out.println("-->" + newVal + "<--");
                                 aggValue[1] += 1;
                             }
                             return aggValue;
                         }, Materialized.with(Serdes.String(), new IntArraySerde()))             
 
-                    .mapValues(v -> "Clear: " + v[0] + " / Extreme " + v[1])
+                    .mapValues(v -> "Green: " + v[0] + " / Red " + v[1])
                     .toStream()
                     .filter((key, value) -> value != null)
                     .peek((key, value) -> System.out.println("-6-Outgoing record - key " + key + " value " + value))
                     .to(outputTopic + "-6", Produced.with(Serdes.String(), Serdes.String()));
 
-        // Get	minimum	temperature of	weather	stations	with	red	alert	events.
-
+        // Get	minimum	temperature of	weather	stations	with	red	alert	events. 
         KStream<String, String> joined = mainStreamAlert.join(minMaxTemp,
-            (leftValue, rightValue) -> "left/" + leftValue + "/right/" + rightValue[0] /* ValueJoiner */
-        );
-        
-        KStream<String, String> minStream = joined.map((k, v) -> new KeyValue<>("tempKey", v.split("/")[3]));
+            (leftValue, rightValue) -> "left/" + leftValue + "/right/" + rightValue[0] /* ValueJoiner */);
 
-        minStream.groupByKey()
-              .aggregate( () -> -200,(aggKey, newVal, aggValue) -> {
+
+        joined.groupByKey()
+            .aggregate( () -> -200,(aggKey, newVal, aggValue) -> {
                 if(aggValue == -200){
-                    aggValue = Integer.valueOf(newVal);
-                }
-
-                if(aggValue > Integer.valueOf(newVal)){
-                    aggValue = Integer.valueOf(newVal);
+                    aggValue = Integer.valueOf(newVal.split("/")[3]);
                 }
 
                 return aggValue;
             }, Materialized.with(Serdes.String(), new IntegerSerde()))
             .toStream()
             .filter((key, value) -> value != null)
-            .peek((key,value)-> System.out.println("7- Minimum temperature in alert stations " + String.valueOf(value)))
+            .peek((key,value)-> System.out.println("-7- key " + key + " value " + value))
             .to(outputTopic, Produced.with(Serdes.String(), Serdes.Integer()));
-        
+            
 
         
         //Get	 maximum	 temperature	 of	 each	 location	 of	 alert	 events	 for the	 last	 hour	(students	are	allowed	to	define a	different	value	for	the	time	window). 
         
         KStream<String, String> joinedMax = mainStreamAlert.join(minMaxTemp,
             (leftValue, rightValue) -> "left/" + leftValue + "/right/" + rightValue[1] /* ValueJoiner */
-        ).peek((key, value) -> System.out.println("-DEBUGGG- Outgoind record - key " + key + " value " + value));
+        );
 
         joinedMax.groupByKey()
         .windowedBy(hoppingWindow)

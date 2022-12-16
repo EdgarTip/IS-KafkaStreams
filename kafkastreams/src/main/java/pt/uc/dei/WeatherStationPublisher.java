@@ -98,8 +98,8 @@ public class WeatherStationPublisher {
     public static void main(String[] args) throws Exception{ //Assign topicName to string variable
 
 
-        String topicName = "t1-d";
-        String topicName2 = "t2-d";           
+        String topicName = "t1-f";
+        String topicName2 = "t2-f";           
 
 
         // create instance for properties to access producer configs
@@ -153,7 +153,7 @@ public class WeatherStationPublisher {
                 }
             }
             catch(Exception e){
-                System.out.println("Not a valid input HERE");
+                System.out.println("Not a valid input");
                 System.out.println(e);
             }
         }
