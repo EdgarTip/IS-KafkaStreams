@@ -35,7 +35,7 @@ public class WeatherStationPublisher {
          // create instance for properties to access producer configs
          Properties props = new Properties();
          //Assign localhost id
-         props.put("bootstrap.servers", "broker2:9093"); //Set acknowledgements for producer requests. props.put("acks", "all");
+         props.put("bootstrap.servers", "broker1:9092"); //Set acknowledgements for producer requests. props.put("acks", "all");
          //If the request fails, the producer can automatically retry,
          props.put("retries", 0);
          //Specify buffer size in config
